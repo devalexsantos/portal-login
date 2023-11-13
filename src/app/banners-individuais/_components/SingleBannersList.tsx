@@ -8,11 +8,17 @@ import {
 } from '@/components/ui/table'
 import { Info } from 'lucide-react'
 import Link from 'next/link'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 
 interface SingleBannersListProps {
   banners: {
     id: string
     description: string
+    url: string
   }[]
 }
 
@@ -29,7 +35,18 @@ export default function SingleBannersList({ banners }: SingleBannersListProps) {
                 <Button className="rounded" asChild>
                   <Link href={`/banners-individuais/${banner.id}`}>Editar</Link>
                 </Button>
-                <Info className="text-primary" />
+                <Popover>
+                  <PopoverTrigger>
+                    <Info className="text-primary" />
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px]">
+                    <img
+                      src={banner.url}
+                      className="w-full"
+                      alt="Imagem do Banner"
+                    />
+                  </PopoverContent>
+                </Popover>
               </TableCell>
             </TableRow>
           ))}
