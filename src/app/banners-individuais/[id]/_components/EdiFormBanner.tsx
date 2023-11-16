@@ -1,23 +1,12 @@
 'use client'
-
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import * as z from 'zod'
-
 import { Button } from '@/components/ui/button'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+
 import { Input } from '@/components/ui/input'
 import axios from 'axios'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useToast } from '@/components/ui/use-toast'
 import { Toaster } from '@/components/ui/toaster'
+import { useRouter } from 'next/navigation'
 
 interface EditFormBannerProps {
   banner: {
@@ -29,106 +18,131 @@ interface EditFormBannerProps {
 }
 
 export default function EditFormBanner({ banner }: EditFormBannerProps) {
+  const router = useRouter()
+
   const [submiting, setSubmiting] = useState(false)
+  const [image, setImage] = useState<File | string | Blob>('')
+  const [card, setCard] = useState<File | string | Blob>('')
+  const [link, setLink] = useState('')
   const { toast } = useToast()
 
-  const formSchema = z.object({
-    url: z.string().min(2, {
-      message: 'Você precisa informar a URL do Banner.',
-    }),
-    card: z.string().min(2, {
-      message: 'Você precisa informar a URL do Card.',
-    }),
-    link: z.string().min(2, {
-      message:
-        'Você deve informar o link com "https://" para qual o Banner deve apontar.',
-    }),
-  })
+  useEffect(() => {
+    setLink(banner.link)
+  }, [banner])
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      url: banner.url,
-      card: banner.card,
-      link: banner.link,
-    },
-  })
+  const apiUrl = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUDNAME}/image/upload`
+  const urlImages: string[] = []
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(e: React.FormEvent) {
     setSubmiting(true)
-    await axios
-      .post(`${process.env.NEXT_PUBLIC_API_URL}/banners/${banner.id}`, {
-        url: values.url,
-        card: values.card,
-        link: values.link,
+
+    e.preventDefault()
+
+    const images = [image, card]
+
+    const uploadPromises = images.map(async (element, index) => {
+      const data = new FormData()
+      data.append('file', element)
+      data.append(
+        'upload_preset',
+        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET as string,
+      )
+      data.append(
+        'cloud_name',
+        process.env.NEXT_PUBLIC_CLOUDINARY_CLOUDNAME as string,
+      )
+
+      return axios
+        .post(apiUrl, data)
+        .then((res) => (urlImages[index] = res.data.url))
+    })
+
+    try {
+      await Promise.all(uploadPromises)
+      uploadImagesToPortal()
+    } catch (error) {
+      console.error('Erro ao carregar imagens:', error)
+    } finally {
+      toast({
+        title: 'Banner Atualizado com sucesso.',
+        description: 'Por favor confira no site.',
       })
-      .then((res) => {
-        if (res.status === 204) {
-          toast({
-            title: 'Alteração Realizada',
-            description: 'Confira no site a modificação.',
-          })
-        } else {
-          toast({
-            title: 'Ocorreu um erro.',
-            description: 'Entre em contato com o administrador.',
-          })
-        }
-      })
-    setSubmiting(false)
+      setSubmiting(false)
+    }
+
+    async function uploadImagesToPortal() {
+      await axios
+        .post(`${process.env.NEXT_PUBLIC_API_URL}/banners/${banner.id}`, {
+          url: urlImages[0],
+          card: urlImages[1],
+          link,
+        })
+        .then((res) => {
+          if (res.status === 204) {
+            toast({
+              title: 'Alteração Realizada',
+              description: 'Confira no site a modificação.',
+            })
+          } else {
+            toast({
+              title: 'Ocorreu um erro.',
+              description: 'Entre em contato com o administrador.',
+            })
+          }
+        })
+      router.refresh()
+    }
   }
 
   return (
     <div className="flex flex-col gap-4 mt-4">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <FormField
-            control={form.control}
-            name="url"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>URL do Banner</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+      <form onSubmit={onSubmit} className="space-y-12">
+        <label className="flex items-center gap-4">
+          <span className="font-bold">Banner:</span>
+          <Input
+            className="max-w-[400px]"
+            name="banner"
+            type="file"
+            required
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                setImage(e.target.files[0])
+              }
+            }}
           />
+        </label>
 
-          <FormField
-            control={form.control}
+        <label className="flex items-center gap-4">
+          <span className="font-bold">Card:</span>
+          <Input
+            className="max-w-[400px]"
             name="card"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>URL do Card</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            type="file"
+            required
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                setCard(e.target.files[0])
+              }
+            }}
           />
+        </label>
 
-          <FormField
-            control={form.control}
+        <label className="flex items-center gap-4">
+          <span className="font-bold">Link:</span>
+          <Input
             name="link"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Link do Banner</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            className="max-w-[400px]"
+            type="text"
+            required
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
           />
-          {submiting && <span>Atualizando...</span>}
-          <Button type="submit" className="rounded">
-            Atualizar
-          </Button>
-        </form>
-      </Form>
+        </label>
+        {submiting && <span>Atualizando...</span>}
+        <Button type="submit" className="rounded">
+          Atualizar
+        </Button>
+      </form>
       <div className="max-w-[1140px]">
         <span className="text-bold">Banner atual:</span>
         <img
