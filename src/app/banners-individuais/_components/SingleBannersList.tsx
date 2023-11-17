@@ -24,13 +24,20 @@ interface SingleBannersListProps {
 
 export default function SingleBannersList({ banners }: SingleBannersListProps) {
   return (
-    <div className="w-full flex justify-center">
-      <Table className="max-w-[800px] m-auto">
+    <div className="container flex justify-center">
+      <Table className="m-auto mt-4">
         <TableCaption>Lista de Banners Individuais atualmente.</TableCaption>
         <TableBody>
           {banners.map((banner, index) => (
             <TableRow key={index}>
-              <TableCell>{banner.description}</TableCell>
+              <TableCell>
+                <Link
+                  href={`/banners-individuais/${banner.id}`}
+                  className="font-bold text-primary"
+                >
+                  {banner.description}
+                </Link>
+              </TableCell>
               <TableCell className="flex gap-3 items-center justify-end">
                 <Button className="rounded" asChild>
                   <Link href={`/banners-individuais/${banner.id}`}>Editar</Link>
