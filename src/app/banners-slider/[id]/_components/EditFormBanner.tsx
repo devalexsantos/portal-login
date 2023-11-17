@@ -1,5 +1,6 @@
 'use client'
 import { Button } from '@/components/ui/button'
+import { TailSpin } from 'react-loader-spinner'
 
 import { Input } from '@/components/ui/input'
 import axios from 'axios'
@@ -178,10 +179,21 @@ export default function EditFormBanner({ banner }: EditFormBannerProps) {
           />
         </label>
 
-        {submiting && <span>Atualizando...</span>}
         <Button type="submit" className="rounded">
           Atualizar
         </Button>
+        {submiting && (
+          <TailSpin
+            height="50"
+            width="50"
+            color="#086f86"
+            ariaLabel="tail-spin-loading"
+            radius="1"
+            wrapperStyle={{}}
+            wrapperClass=""
+            visible={true}
+          />
+        )}
       </form>
       <div className="flex gap-3">
         <div className="max-w-[1140px]">

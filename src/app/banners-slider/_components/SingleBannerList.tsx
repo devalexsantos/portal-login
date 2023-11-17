@@ -27,7 +27,7 @@ export default function SingleBannersList({ banners }: SingleBannersListProps) {
   return (
     <div className="w-full flex justify-center">
       <Table className="max-w-[800px] m-auto">
-        <TableCaption>Lista de Banners Individuais atualmente.</TableCaption>
+        <TableCaption>Lista de Banners no Slider atualmente.</TableCaption>
         <TableBody>
           {banners.map((banner, index) => (
             <TableRow key={index}>

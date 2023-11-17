@@ -1,4 +1,5 @@
 'use client'
+import { TailSpin } from 'react-loader-spinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/use-toast'
@@ -167,10 +168,21 @@ export default function Page() {
           />
         </label>
 
-        {submiting && <span>Atualizando...</span>}
-        <Button type="submit" className="rounded">
-          Atualizar
+        <Button type="submit" className="rounded" disabled={submiting}>
+          Criar
         </Button>
+        {submiting && (
+          <TailSpin
+            height="50"
+            width="50"
+            color="#086f86"
+            ariaLabel="tail-spin-loading"
+            radius="1"
+            wrapperStyle={{}}
+            wrapperClass=""
+            visible={true}
+          />
+        )}
       </form>
     </div>
   )
