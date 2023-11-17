@@ -24,7 +24,7 @@ export default function Page() {
   const { toast } = useToast()
 
   const urlImages: string[] = []
-  const apiUrl = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUDNAME}/image/upload`
+  const apiUrl = process.env.NEXT_PUBLIC_CLOUDFLARE_API_URL as string
 
   async function onSubmit(e: React.FormEvent) {
     setSubmiting(true)
@@ -36,23 +36,39 @@ export default function Page() {
     const uploadPromises = images.map(async (element, index) => {
       const data = new FormData()
       data.append('file', element)
-      data.append(
-        'upload_preset',
-        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET as string,
-      )
-      data.append(
-        'cloud_name',
-        process.env.NEXT_PUBLIC_CLOUDINARY_CLOUDNAME as string,
-      )
+      data.append('metadata', 'file')
+      data.append('requireSignedURLs', 'false')
 
-      return axios
-        .post(apiUrl, data)
-        .then((res) => (urlImages[index] = res.data.url))
+      return (
+        fetch(
+          'https://api.cloudflare.com/client/v4/accounts/3a65e48f51d8d9fb5843e310cc474993/images/v1',
+          {
+            method: 'POST',
+            headers: {
+              Authorization: 'Bearer FcxwQ6iaqe2aZwmnbzVCoF9h98vni17x',
+              'Content-Type': 'multipart/form-data',
+            },
+            body: data,
+            mode: 'no-cors',
+          },
+        )
+          // axios
+          //   .post(apiUrl, data, {
+          //     headers: {
+          //       Authorization: 'Bearer FcxwQ6iaqe2aZwmnbzVCoF9h98vni17x',
+          //       'Content-Type': 'multipart/form-data',
+          //       requireSigned: 'true',
+          //     },
+          //   })
+          // .then((res) => (urlImages[index] = res.data.url))
+          .then((res) => res.json())
+          .then((data) => console.log(data))
+      )
     })
 
     try {
       await Promise.all(uploadPromises)
-      uploadImagesToPortal()
+      // uploadImagesToPortal()
     } catch (error) {
       console.error('Erro ao carregar imagens:', error)
     } finally {
@@ -135,7 +151,7 @@ export default function Page() {
               className="max-w-[400px]"
               name="card"
               type="file"
-              required
+              // required
               onChange={(e) => {
                 if (e.target.files && e.target.files.length > 0) {
                   setCard(e.target.files[0])
