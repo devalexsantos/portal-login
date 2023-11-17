@@ -8,6 +8,8 @@ import { useEffect, useState } from 'react'
 import { useToast } from '@/components/ui/use-toast'
 import { Toaster } from '@/components/ui/toaster'
 import { useRouter } from 'next/navigation'
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
+import { storage } from '@/services/firebase'
 
 interface EditFormBannerProps {
   banner: {
@@ -26,8 +28,8 @@ export default function EditFormBanner({ banner }: EditFormBannerProps) {
 
   const [submiting, setSubmiting] = useState(false)
 
-  const [image, setImage] = useState<File | string | Blob>('')
-  const [card, setCard] = useState<File | string | Blob>('')
+  const [image, setImage] = useState<File | null>(null)
+  const [card, setCard] = useState<File | null>(null)
   const [link, setLink] = useState('')
   const [description, setDescription] = useState('')
   const [position, setPosition] = useState(0)
@@ -41,7 +43,6 @@ export default function EditFormBanner({ banner }: EditFormBannerProps) {
   }, [banner])
 
   const urlImages: string[] = []
-  const apiUrl = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUDNAME}/image/upload`
 
   async function onSubmit(e: React.FormEvent) {
     setSubmiting(true)
@@ -51,20 +52,13 @@ export default function EditFormBanner({ banner }: EditFormBannerProps) {
     const images = [image, card]
 
     const uploadPromises = images.map(async (element, index) => {
-      const data = new FormData()
-      data.append('file', element)
-      data.append(
-        'upload_preset',
-        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET as string,
-      )
-      data.append(
-        'cloud_name',
-        process.env.NEXT_PUBLIC_CLOUDINARY_CLOUDNAME as string,
-      )
+      const storageRef = ref(storage, `banners-slider/${element?.name}`)
 
-      return axios
-        .post(apiUrl, data)
-        .then((res) => (urlImages[index] = res.data.url))
+      await uploadBytes(storageRef, element as Blob).then(() => {
+        return getDownloadURL(storageRef).then(
+          (url) => (urlImages[index] = url),
+        )
+      })
     })
 
     try {
